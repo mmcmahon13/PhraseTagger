@@ -58,12 +58,15 @@ class PhraseTagger {
 
   // for each sentence in the document, tag the tokens with a  PhraseType (CategoricalVariable[String])
   def tagText(text:Document) = {
-    for (sentence <- text.sentences)
-      PhraseLexicon.tagLemmatizedText(sentence.tokens,)
+//      def featureFunction(word:Token, label:String): CategoricalVariable[String] = {
+//        return new PhraseTypeTag(word, label+"-Phrase")
+//      }
+      for (sentence <- text.sentences)
+        PhraseLexicon.labelLemmatizedText(sentence.tokens, (t:Token, s:String)=>new PhraseTypeTag(t,s+"-Phrase"))
   }
 
   /** A categorical variable, associated with a token, holding whether and where it occurs in a phrase.  */
-  class phraseTypeTag(token:Token, initialIndex:Int)
+  class PhraseTypeTag(token:Token, initialIndex:Int)
     extends CategoricalVariable[String](initialIndex) {
     def this(token:Token, initialCategory:String) = this(token, PhraseTagDomain.index(initialCategory))
     final def domain = PhraseTagDomain
