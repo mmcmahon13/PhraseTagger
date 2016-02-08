@@ -55,7 +55,7 @@ object PhraseLexiconBuilder {
     val pw = new PrintWriter(new File(lexFile))
     for ((k,v) <- scores) {
       if(v >= threshold) {
-        pw.write(k._1 + " " + k._2)
+        pw.write(k._1 + " " + k._2 + "\n")
       }
     }
     pw.close()
