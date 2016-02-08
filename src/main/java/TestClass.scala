@@ -5,8 +5,7 @@ import scala.collection.mutable.Map
   */
 object TestClass {
   def main(args: Array[String]): Unit = {
-    val tagger:PhraseTagger = new PhraseTagger()
-    tagger.countAndScoreTokens("test.txt", 0.01)
+    PhraseLexiconBuilder.buildLexicon("test.txt","phrases.txt", 0.1, 0.5)
   }
 
 }

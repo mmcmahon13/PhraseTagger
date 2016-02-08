@@ -2,58 +2,28 @@
   * Created by Molly on 1/21/2016.
   */
 
-import cc.factorie.app.nlp.{Token, Document}
-import cc.factorie.app.nlp.lemma.{LowercaseLemmatizer, Lemmatizer}
+import cc.factorie.app.nlp.lemma.LowercaseLemmatizer
+import cc.factorie.app.nlp.{DocumentAnnotator, Token, Document}
 import cc.factorie.app.nlp.lexicon.TriePhraseLexicon
 import cc.factorie.app.strings.{nonWhitespaceClassesSegmenter, StringSegmenter}
 import cc.factorie.variable.{CategoricalDomain, CategoricalVariable}
 
-import scala.collection.mutable.Map
 import scala.io.Source
 
-class PhraseTagger {
+class PhraseTagger extends DocumentAnnotator{
+  // lexicon to hold phrases
+  object PhraseLexicon extends TriePhraseLexicon("Phrases", nonWhitespaceClassesSegmenter, LowercaseLemmatizer)
 
-  def countAndScoreTokens(filename: String, delta: Double): Map[(String, String), Double] = {
-    val corefCounts = Map[(String, String), Int]().withDefaultValue(0)
-    val wordCounts = Map[String, Int]().withDefaultValue(0)
-    var words: Array[String] = null
-    var curPhrase: (String, String) = null
-
-
-    for (line <- Source.fromFile(filename, "ISO-8859-1").getLines) {
-      words = line.split(' ')
-      for (i <- 0 until words.length - 1) {
-        wordCounts.update(words(i), wordCounts(words(i)) + 1)
-        curPhrase = (words(i), words(i + 1))
-        corefCounts.update(curPhrase, corefCounts(curPhrase) + 1)
-      }
+  // read in phrases from lexicon file and build PhraseLexicon
+  def buildLexicon(lexFile: String) = {
+    for (line <- Source.fromFile(lexFile, "ISO-8859-1").getLines) {
+      PhraseLexicon += line
     }
-
-    var word1:String = null
-    var word2:String = null
-    var score:Double = 0
-
-    val scores = Map[(String, String), Double]().withDefaultValue(0)
-
-    for ((wordTup, count) <- corefCounts){
-      word1 = wordTup._1
-      word2 = wordTup._2
-      score = (count - delta)/(wordCounts(word1)*wordCounts(word2))
-      scores(wordTup) = score
-
-    }
-
-    for ((k,v) <- scores) printf("key: %s, value: %s\n", k, v)
-
-    //    for ((k,v) <- corefCounts) printf("key: %s, value: %s\n", k, v)
-    //    for ((k,v) <- wordCounts) printf("key: %s, value: %s\n", k, v)
-
-    return scores
   }
 
-  // add all phrases with scores above the chosen threshold to the lexicon
-  def buildLexicon(scores:Map[(String, String), Double], threshold:Double) = {
-    for ((k,v) <- scores) {if(v >= threshold){PhraseLexicon += (k._1 + " " + k._2)}}
+  def process(document:Document): Document = {
+    //TODO: tag the text
+    return document
   }
 
   // for each sentence in the document, tag the tokens with a  PhraseType (CategoricalVariable[String])
@@ -94,7 +64,9 @@ class PhraseTagger {
 
   }
 
-  // lexicon to hold phrases
-  object PhraseLexicon extends TriePhraseLexicon("Phrases", nonWhitespaceClassesSegmenter, LowercaseLemmatizer)
+  override def prereqAttrs: Iterable[Class[_]] = ???
 
+  override def postAttrs: Iterable[Class[_]] = ???
+
+  override def tokenAnnotationString(token: Token): String = ???
 }
