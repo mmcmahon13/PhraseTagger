@@ -10,8 +10,8 @@ import scala.io.Source
   */
 object PhraseLexiconBuilder {
 
-  //TODO: extend to do 3+ word phrases?
-  // TODO: handle punctuation somehow?
+  // TODO: extend to do 3+ word phrases?
+  // TODO: handle punctuation somehow? Or is this taken care of by lemmatization later?
   def countAndScoreTokens(filename: String, delta: Double): Map[(String, String), Double] = {
     val corefCounts = Map[(String, String), Int]().withDefaultValue(0)
     val wordCounts = Map[String, Int]().withDefaultValue(0)
@@ -63,9 +63,10 @@ object PhraseLexiconBuilder {
     pw.close()
   }
 
+  // todo: add options for directory of docs, list of docs?
   class PhraseLexiconOptions extends cc.factorie.util.DefaultCmdOptions with SharedNLPCmdOptions {
     val corpusFile = new CmdOption("corpus-file", "", "FILENAME", "Corpus file containing documents.")
-    val lexiconFile = new CmdOption("lexicon-file", "phrases.txt", "FILENAME", "Corpus file to write phrases to")
+    val lexiconFile = new CmdOption("lexicon-file", "phrases.txt", "FILENAME", "Lexicon file to write phrases to")
     val delta = new CmdOption("delta", 0.1, "DOUBLE", "parameter for phrase scoring")
     val threshold = new CmdOption("threshold", 0.5, "DOUBLE", "minimum score for phrase to be included in the lexicon")
   }

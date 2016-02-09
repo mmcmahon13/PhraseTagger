@@ -3,39 +3,41 @@
   */
 
 import cc.factorie.app.nlp.lemma.LowercaseLemmatizer
-import cc.factorie.app.nlp.{DocumentAnnotator, Token, Document}
+import cc.factorie.app.nlp.{SharedNLPCmdOptions, DocumentAnnotator, Token, Document}
 import cc.factorie.app.nlp.lexicon.TriePhraseLexicon
 import cc.factorie.app.strings.{nonWhitespaceClassesSegmenter, StringSegmenter}
 import cc.factorie.variable.{CategoricalDomain, CategoricalVariable}
 
 import scala.io.Source
 
+// pipeline version of a phrase tagger annotator
 class PhraseTagger extends DocumentAnnotator{
+
   // lexicon to hold phrases
   object PhraseLexicon extends TriePhraseLexicon("Phrases", nonWhitespaceClassesSegmenter, LowercaseLemmatizer)
+
+  // by default, load lexicon from the serialized "phrases" file
+  def process(document:Document): Document = {
+    tagText(document, "phrases.txt")
+    return document
+  }
 
   // read in phrases from lexicon file and build PhraseLexicon
   def buildLexicon(lexFile: String) = {
     for (line <- Source.fromFile(lexFile, "ISO-8859-1").getLines) {
       PhraseLexicon += line
     }
-  }
-
-  def process(document:Document): Document = {
-    //TODO: tag the text
-    return document
+    print(PhraseLexicon)
   }
 
   // for each sentence in the document, tag the tokens with a  PhraseType (CategoricalVariable[String])
-  def tagText(text:Document) = {
-//      def featureFunction(word:Token, label:String): CategoricalVariable[String] = {
-//        return new PhraseTypeTag(word, label+"-Phrase")
-//      }
-      for (sentence <- text.sentences)
-        PhraseLexicon.labelLemmatizedText(sentence.tokens, (t:Token, s:String)=>new PhraseTypeTag(t,s+"-Phrase"))
+  def tagText(text:Document, lexFile: String) = {
+    buildLexicon(lexFile)
+    for (sentence <- text.sentences)
+      PhraseLexicon.labelLemmatizedText(sentence.tokens, (t:Token, s:String)=>new PhraseTypeTag(t,s+"-Phrase"))
   }
 
-  /** A categorical variable, associated with a token, holding whether and where it occurs in a phrase.  */
+  /** A categorical variable, associated with a token, holding whether and where it occurs in a phrase. */
   class PhraseTypeTag(token:Token, initialIndex:Int)
     extends CategoricalVariable[String](initialIndex) {
     def this(token:Token, initialCategory:String) = this(token, PhraseTagDomain.index(initialCategory))
@@ -64,9 +66,28 @@ class PhraseTagger extends DocumentAnnotator{
 
   }
 
-  override def prereqAttrs: Iterable[Class[_]] = ???
-
-  override def postAttrs: Iterable[Class[_]] = ???
-
+  // TODO: do we need prerequisite attrs?
+  override def prereqAttrs: Iterable[Class[_]] = Nil
+  // tokens tagged with PhraseTypeTags as attributes
+  override def postAttrs: Iterable[Class[_]] = List(classOf[PhraseTypeTag])
+  // TODO: get these from tokens attr or something?
   override def tokenAnnotationString(token: Token): String = ???
+
+  //TODO: add more options
+  class PhraseLexiconOptions extends cc.factorie.util.DefaultCmdOptions with SharedNLPCmdOptions {
+    val docFile = new CmdOption("doc-file", "", "FILENAME", "Document to annotate")
+    //val docFiles = new CmdOption("doc-files", "", "String", " comma-separated list of documents to annotate")
+    val lexiconFile = new CmdOption("lexicon-file", "phrases.txt", "FILENAME", "Serialized lexicon to load")
+  }
+
+  def main(args: Array[String]): Unit = {
+    val opts = new PhraseLexiconOptions
+    opts.parse(args)
+    if(opts.docFile.wasInvoked){
+      val lines = scala.io.Source.fromFile(opts.docFile.value).mkString
+      process(new Document(lines))
+    }
+  }
+
+
 }
