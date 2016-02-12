@@ -11,7 +11,7 @@ import cc.factorie.variable.{CategoricalDomain, CategoricalVariable}
 import scala.io.Source
 
 // pipeline version of a phrase tagger annotator
-class PhraseTagger extends DocumentAnnotator{
+object PhraseTagger extends DocumentAnnotator{
 
   // lexicon to hold phrases
   object PhraseLexicon extends TriePhraseLexicon("Phrases", nonWhitespaceClassesSegmenter, LowercaseLemmatizer)
@@ -27,7 +27,7 @@ class PhraseTagger extends DocumentAnnotator{
     for (line <- Source.fromFile(lexFile, "ISO-8859-1").getLines) {
       PhraseLexicon += line
     }
-    print(PhraseLexicon)
+    //print(PhraseLexicon)
   }
 
   // for each sentence in the document, tag the tokens with a  PhraseType (CategoricalVariable[String])
@@ -74,18 +74,30 @@ class PhraseTagger extends DocumentAnnotator{
   override def tokenAnnotationString(token: Token): String = ???
 
   //TODO: add more options
-  class PhraseLexiconOptions extends cc.factorie.util.DefaultCmdOptions with SharedNLPCmdOptions {
+  class PhraseTaggerOptions extends cc.factorie.util.DefaultCmdOptions with SharedNLPCmdOptions {
     val docFile = new CmdOption("doc-file", "", "FILENAME", "Document to annotate")
+    val corpFile = new CmdOption("corp-file", "", "FILENAME", "File of multiple documents to annotate")
     //val docFiles = new CmdOption("doc-files", "", "String", " comma-separated list of documents to annotate")
     val lexiconFile = new CmdOption("lexicon-file", "phrases.txt", "FILENAME", "Serialized lexicon to load")
   }
 
   def main(args: Array[String]): Unit = {
-    val opts = new PhraseLexiconOptions
+    val opts = new PhraseTaggerOptions
     opts.parse(args)
-    if(opts.docFile.wasInvoked){
-      val lines = scala.io.Source.fromFile(opts.docFile.value).mkString
-      process(new Document(lines))
+    if(opts.corpFile.wasInvoked){
+      println("tagging document "+opts.corpFile.value)
+      val documents = LoadRcvWiki.fromCorpusFilename(opts.corpFile.value)
+      //TODO: tokenize the document somehow? write a loader to load sentences and tokens explicitly from the file
+      for(document <- documents) {
+        val d = process(document)
+        var name = ""
+        for (token <- d.tokens) {
+          if(token.attr[PhraseTypeTag] != null){
+             name = token.attr[PhraseTypeTag].toString()
+          }
+          println(token.string + " " + name)
+        }
+      }
     }
   }
 
