@@ -1,5 +1,5 @@
 
-import java.io.{File, PrintWriter}
+import java.io.{FileOutputStream, File, PrintWriter}
 import cc.factorie.app.nlp.SharedNLPCmdOptions
 
 import scala.collection.mutable.Map
@@ -21,10 +21,16 @@ object PhraseLexiconBuilder {
     // count word occurrences, word pair occurrences
     for (line <- Source.fromFile(filename, "ISO-8859-1").getLines) {
       words = line.split(' ')
+      println(words)
       for (i <- 0 until words.length - 1) {
-        wordCounts.update(words(i), wordCounts(words(i)) + 1)
-        curPhrase = (words(i), words(i + 1))
-        corefCounts.update(curPhrase, corefCounts(curPhrase) + 1)
+        val curWord = words(i).replaceAll("[\"-,;'/.!#$&%]", "")
+        val nextWord = words(i+1).replaceAll("[\"-,;'/.!#$&%]", "")
+        if(curWord.length()!=0)
+          wordCounts.update(curWord, wordCounts(curWord) + 1)
+        if(curWord.length()!=0 && nextWord.length()!=0) {
+          curPhrase = (curWord, nextWord)
+          corefCounts.update(curPhrase, corefCounts(curPhrase) + 1)
+        }
       }
     }
 
@@ -54,9 +60,9 @@ object PhraseLexiconBuilder {
   def buildLexicon(corpus: String, lexFile: String, delta:Double, threshold:Double) = {
     val scores = countAndScoreTokens(corpus, delta)
     //for ((k,v) <- scores) {if(v >= threshold){PhraseLexicon += (k._1 + " " + k._2)}}
-    val pw = new PrintWriter(new File(lexFile))
-    for ((k,v) <- scores) {
-      if(v >= threshold) {
+    val pw = new PrintWriter(new FileOutputStream(lexFile), false)
+    for ((k, v) <- scores) {
+      if (v >= threshold) {
         pw.write(k._1 + " " + k._2 + "\n")
       }
     }

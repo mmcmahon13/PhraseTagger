@@ -24,10 +24,12 @@ object PhraseTagger extends DocumentAnnotator{
 
   // read in phrases from lexicon file and build PhraseLexicon
   def buildLexicon(lexFile: String) = {
+    println("Building the lexicon")
     for (line <- Source.fromFile(lexFile, "ISO-8859-1").getLines) {
+      //println(line)
       PhraseLexicon += line
     }
-    //print(PhraseLexicon)
+    println()
   }
 
   // for each sentence in the document, tag the tokens with a  PhraseType (CategoricalVariable[String])
@@ -82,6 +84,8 @@ object PhraseTagger extends DocumentAnnotator{
   }
 
   def main(args: Array[String]): Unit = {
+    //println(PhraseLexicon.contains("antonio d'alesio"))
+
     val opts = new PhraseTaggerOptions
     opts.parse(args)
     if(opts.corpFile.wasInvoked){
@@ -93,7 +97,9 @@ object PhraseTagger extends DocumentAnnotator{
         var name = ""
         for (token <- d.tokens) {
           if(token.attr[PhraseTypeTag] != null){
-             name = token.attr[PhraseTypeTag].toString()
+             name = "["+token.attr[PhraseTypeTag].toString()+"]"
+          } else {
+            name = "[none]"
           }
           println(token.string + " " + name)
         }

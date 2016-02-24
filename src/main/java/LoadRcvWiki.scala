@@ -33,12 +33,12 @@ object LoadRcvWiki {
   def fromDocFilename(file: String): Document = {
     val document = new Document()
     for (line <- io.Source.fromFile(file).getLines()) {
-      val sentences = line.split(".")
+      val sentences = line.split('.').map(_.trim.replaceAll("[\"-,;'/.!#$&%]", ""))
       for(sentence <- sentences){
         val docSentence = new Sentence(document)
-        val words = sentence.split(" ")
+        val words = sentence.split(' ').map(_.trim)
         for(word <- words){
-          val t = new Token(docSentence, word)
+          val t = new Token(docSentence, word.replaceAll(",;'/.!#$&%", ""))
         }
       }
     }
