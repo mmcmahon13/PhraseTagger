@@ -84,14 +84,12 @@ object PhraseTagger extends DocumentAnnotator{
   }
 
   def main(args: Array[String]): Unit = {
-    //println(PhraseLexicon.contains("antonio d'alesio"))
-
     val opts = new PhraseTaggerOptions
     opts.parse(args)
+
     if(opts.corpFile.wasInvoked){
       println("tagging document "+opts.corpFile.value)
       val documents = LoadRcvWiki.fromCorpusFilename(opts.corpFile.value)
-      //TODO: tokenize the document somehow? write a loader to load sentences and tokens explicitly from the file
       for(document <- documents) {
         val d = process(document)
         var name = ""
@@ -99,7 +97,8 @@ object PhraseTagger extends DocumentAnnotator{
           if(token.attr[PhraseTypeTag] != null){
              name = "["+token.attr[PhraseTypeTag].toString()+"]"
           } else {
-            name = "[none]"
+            token.attr += new PhraseTypeTag(token,"O-Phrase")
+            name = "["+token.attr[PhraseTypeTag].toString()+"]"
           }
           println(token.string + " " + name)
         }
