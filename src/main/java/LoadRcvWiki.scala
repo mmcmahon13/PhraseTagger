@@ -15,12 +15,12 @@ object LoadRcvWiki {
       var document = new Document(line)
       // get a list of the doc's sentences
       // for each of them, create a sentence associate with teh document object, fill it with tokens
-      val sentences = line.split("[.?!;]").map(_.trim.replaceAll("[\"-,;'/.!#$&%]", ""))
+      val sentences = line.split("[.?!;]")
       for(sentence <- sentences){
         val docSentence = new Sentence(document)
-        val words = sentence.split(' ').map(_.trim.replaceAll("[\"-,;'/.!#$&%]", ""))
+        val words = sentence.split(' ')
         for(word <- words){
-          val t = new Token(docSentence, word.replaceAll("[\",;'/.!#$&%]", ""))
+          val t = new Token(docSentence, word)
         }
       }
       // add the document to the list and return the final sequence of docs
@@ -33,12 +33,12 @@ object LoadRcvWiki {
   def fromDocFilename(file: String): Document = {
     val document = new Document()
     for (line <- io.Source.fromFile(file).getLines()) {
-      val sentences = line.split("[.?!;]").map(_.trim.replaceAll("[\"-,;'/.!#$&%]", ""))
+      val sentences = line.split("[.?!;]")
       for(sentence <- sentences){
         val docSentence = new Sentence(document)
-        val words = sentence.split(' ').map(_.trim.replaceAll("[\"-,;'/.!#$&%]", ""))
+        val words = sentence.split(' ')
         for(word <- words){
-          val t = new Token(docSentence, word.replaceAll("[\",;'/.!#$&%]", ""))
+          val t = new Token(docSentence, word)
         }
       }
     }

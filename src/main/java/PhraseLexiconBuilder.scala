@@ -1,6 +1,7 @@
 
 import java.io.{FileOutputStream, File, PrintWriter}
 import cc.factorie.app.nlp.SharedNLPCmdOptions
+import cc.factorie.app.nlp.Document
 
 import scala.collection.mutable.Map
 import scala.io.Source
@@ -10,60 +11,17 @@ import scala.io.Source
   */
 object PhraseLexiconBuilder {
 
-  // TODO: extend to do 3+ word phrases?
-  // TODO: handle punctuation somehow? Or is this taken care of by lemmatization later?
-  def countAndScoreTokens(filename: String, delta: Double): Map[(String, String), Double] = {
-    val corefCounts = Map[(String, String), Int]().withDefaultValue(0)
-    val wordCounts = Map[String, Int]().withDefaultValue(0)
-    var words: Array[String] = null
-    var curPhrase: (String, String) = null
-
-    // count word occurrences, word pair occurrences
-    for (line <- Source.fromFile(filename, "ISO-8859-1").getLines) {
-      words = line.split(' ')
-      println(words)
-      for (i <- 0 until words.length - 1) {
-        val curWord = words(i).replaceAll("[\"-,;'/.!#$&%]", "")
-        val nextWord = words(i+1).replaceAll("[\"-,;'/.!#$&%]", "")
-        if(curWord.length()!=0)
-          wordCounts.update(curWord, wordCounts(curWord) + 1)
-        if(curWord.length()!=0 && nextWord.length()!=0) {
-          curPhrase = (curWord, nextWord)
-          corefCounts.update(curPhrase, corefCounts(curPhrase) + 1)
-        }
-      }
-    }
-
-    var word1:String = null
-    var word2:String = null
-    var score:Double = 0
-
-    val scores = Map[(String, String), Double]().withDefaultValue(0)
-
-    for ((wordTup, count) <- corefCounts){
-      word1 = wordTup._1
-      word2 = wordTup._2
-      score = (count - delta)/(wordCounts(word1)*wordCounts(word2))
-      scores(wordTup) = score
-
-    }
-
-    for ((k,v) <- scores) printf("key: %s, value: %s\n", k, v)
-
-    //    for ((k,v) <- corefCounts) printf("key: %s, value: %s\n", k, v)
-    //    for ((k,v) <- wordCounts) printf("key: %s, value: %s\n", k, v)
-
-    return scores
-  }
-
   // add all phrases with scores above the chosen threshold to the lexicon file
   def buildLexicon(corpus: String, lexFile: String, delta:Double, threshold:Double) = {
-    val scores = countAndScoreTokens(corpus, delta)
-    //for ((k,v) <- scores) {if(v >= threshold){PhraseLexicon += (k._1 + " " + k._2)}}
+    val corpusDocs = LoadRcvWiki.fromCorpusFilename(corpus)
+    val bigrams = new BigramStatistics
+    bigrams.process(corpusDocs)
+    val phrases = bigrams.getLikelyBigramPhrases(delta, threshold)
     val pw = new PrintWriter(new FileOutputStream(lexFile), false)
-    for ((k, v) <- scores) {
-      if (v >= threshold) {
-        pw.write(k._1 + " " + k._2 + "\n")
+    for (phraseSequence <- phrases) {
+      if(!phraseSequence(0).replaceAll("[\",;'/.!#$&%]", "").equals("") && !phraseSequence(1).replaceAll("[\",;'/.!#$&%]", "").equals("")) {
+        println(phraseSequence)
+        pw.write(phraseSequence(0) + " " + phraseSequence(1) + "\n")
       }
     }
     pw.close()
